@@ -1,4 +1,4 @@
-%% This is a matlab scriptthat loads up a user interfaceand it allows a 
+%% This is a matlab script that loads up a user interface and it allows a 
 % user to select different types of waveform: square wave, trapezoidal,
 % triangular, or sawtooth as well as sine and cosine. The user is allowed 
 % to specify the periodicity of the waveform. The tool will then allow the
@@ -275,21 +275,47 @@ classdef FourierSeriesApp3D < matlab.apps.AppBase
 
             % Individual harmonics as vertical "sheets" over time
             if app.ShowHarmonicsCheckBox.Value && ~isempty(harmonics)
-                dimColor = [0.6 0.6 0.6];
-                for k = 1:numel(harmonics)
+                dimColor  = [0.6 0.6 0.6];
+                zeroColor = [0.75 0.75 0.85];
+                wtype = app.WaveformDropDown.Value;
+                % nMax  = 2*numel(harmonics) - 1;  % highest harmonic index to show
+                switch wtype
+                    case {'Square','Triangle'}
+                        nMax = 2*numel(harmonics) - 1;  % highest odd: 1,3,5,...,2N-1
+                    otherwise
+                        nMax = numel(harmonics);         % all harmonics: 1,2,3,...,N
+                end
+
+                for n = 1:nMax
                     switch modeStr
-                        case 'Harmonic index'
-                            xVal = k;            % 1,2,3,...[web:71]
-                        case 'Frequency (Hz)'
-                            xVal = k*f0;         % physical frequency in Hz
-                        otherwise
-                            xVal = k;
+                        case 'Harmonic index'; xVal = n;
+                        case 'Frequency (Hz)'; xVal = n*f0;
+                        otherwise;             xVal = n;
                     end
                     xk = xVal*ones(size(t));
-                    plot3(ax, xk, t, harmonics{k}, ...
-                          'Color', dimColor, 'LineWidth', 0.8);
+            
+                    switch wtype
+                        case {'Square','Triangle'}
+                            isOdd = mod(n,2) == 1;
+                            if isOdd
+                                k = (n+1)/2;
+                                plot3(ax, xk, t, harmonics{k}, ...
+                                      'Color', dimColor, 'LineWidth', 1.0);
+                            else
+                                % Zero line in time-frequency plane (z=0) — bold so it shows over grid
+                                plot3(ax, xk, t, zeros(size(t)), ...
+                                      'Color', dimColor, 'LineWidth', 1.0, 'LineStyle', '-');
+                            end
+
+                        otherwise  % Sawtooth, Trapezoid — all harmonics present
+                            if n <= numel(harmonics)
+                                plot3(ax, xk, t, harmonics{n}, ...
+                                      'Color', dimColor, 'LineWidth', 1.0);
+                            end
+                    end
                 end
             end
+
 
             % Summed Fourier approximation also at X = 0
             xSum = zeros(size(t));
